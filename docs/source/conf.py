@@ -15,7 +15,7 @@
 # sys.path.insert(0, os.path.abspath('.'))
 import os
 import sys
-package_name = 'programs'
+package_name = 'reconstructionalgorithm'
 package_root = os.path.abspath('../../')
 sys.path.insert(0, package_root)
 sys.path.insert(0, os.path.join(package_root, package_name))
