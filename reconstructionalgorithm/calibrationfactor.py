@@ -28,9 +28,22 @@ import cv2
 
 
 
-#Class for  correcting 2D slices
-
 class calibrationfactor(object):
+    """Class for  correcting 2D slices.
+
+    Parameters
+    ----------
+    mean_array : type
+        Description of parameter `mean_array`.
+    directory : type
+        Description of parameter `directory`.
+
+    Attributes
+    ----------
+    mean_array
+    directory
+
+    """
 
     #Initialization of class
     def __init__(self,mean_array,directory):

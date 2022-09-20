@@ -7,10 +7,60 @@ import skimage
 from skimage.morphology import disk
 from skimage.morphology import (erosion, dilation, opening, closing,
                                 white_tophat)
-#Class for loading and manipulate camera pictures
 
 
 class Image_loader(object):
+    """Class for loading and manipulate camera pictures.
+
+    Parameters
+    ----------
+    path : type
+        Description of parameter `path`.
+    color : type
+        Description of parameter `color`.
+    rescale : type
+        Description of parameter `rescale`.
+    flip : type
+        Description of parameter `flip`.
+    rot : type
+        Description of parameter `rot`.
+    crop : type
+        Description of parameter `crop`.
+    radius_cut_edge : type
+        Description of parameter `radius_cut_edge`.
+    radius_circle : type
+        Description of parameter `radius_circle`.
+    shift : type
+        Description of parameter `shift`.
+    mask_borders : type
+        Description of parameter `mask_borders`.
+    numpy : type
+        Description of parameter `numpy`.
+    factor : type
+        Description of parameter `factor`.
+
+    Attributes
+    ----------
+    width : type
+        Description of attribute `width`.
+    height : type
+        Description of attribute `height`.
+    image : type
+        Description of attribute `image`.
+    path
+    color
+    rescale
+    flip
+    rot
+    crop
+    radius_cut_edge
+    radius_circle
+    shift
+    mask_borders
+    numpy
+    factor
+
+    """
 
     #Initialization of class
     def __init__(self,path,color,rescale,flip,rot,crop,radius_cut_edge,radius_circle,shift,mask_borders,numpy,factor):

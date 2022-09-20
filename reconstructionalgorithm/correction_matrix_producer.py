@@ -1,135 +1,234 @@
 import numpy as np
-from camera_picture_viewer import Camera_picture_viewer
-from image_loader import Image_loader
-from tomograpic_viewer import Tomograpic_viewer
+import pandas as pd
 import scipy.ndimage
-import cv2
+from tqdm import tqdm
 
 
+class Correction_matrix_producer(object):
+    """#Class for calculating the response matrix in reconstruction volume.
 
-shape_front=(186,152) #you can not reconstruct somethin bigger than 161
-shape_top=(159,152)
+    Parameters
+    ----------
+    shape_front : tuple-like
+        Tuple that defines front projection dimension.
+    shape_side : tuple-like
+        Tuple that defines lateral projections dimension.
+    shift_image_top : list-like
+        List of 2 integr numbers that defines how much the top 2D array is going to be shifted.
+    shift_image_120 : list-like
+        Description of parameter `shift_image_120`.
+    shift_image_240 :list-like
+        Description of parameter `shift_image_240`.
+    shift_image_front : list-like
+        List of 2 elements.
+    mask_border_front : list-like
+        List of 4 elements.
+    mask_border_top : list-like
+        List of 4 elements.
+    mask_border_120 : list-like
+        List of 4 elements.
+    mask_border_240 : list-like
+        List of 4 elements. The first teo numbers are used to set the side values to zero,
+        while the other two are used to set the front number to 0.
 
-rec_part_front=np.stack([np.ones(shape_front)]*shape_top[0],axis=0)
-rec_part_top=np.stack([np.ones(shape_top)]*shape_front[0],axis=1)
-rec_part_120=np.stack([np.ones(shape_top)]*shape_front[0],axis=1)
-rec_part_240=np.stack([np.ones(shape_top)]*shape_front[0],axis=1)
+    Attributes
+    ----------
+    shape_front
 
-rec_part_120=scipy.ndimage.rotate(rec_part_120,120,axes=(1, 2),reshape=False,prefilter=True)
-rec_part_240=scipy.ndimage.rotate(rec_part_240,240,axes=(1, 2),reshape=False,prefilter=True)
-
-correction_matrix=rec_part_front+rec_part_top+rec_part_120+rec_part_240
-
-#Perform cubic median filter
-#correction_matrix=np.divide(1,np.round(correction_matrix,decimals=0),out=np.zeros_like(np.round(correction_matrix,decimals=0)),where=correction_matrix!=0)
-
-#correction_matrix[np.logical_and(0<correction_matrix,correction_matrix<=0.5)]=0
-#correction_matrix[np.logical_and(0.5<correction_matrix,correction_matrix<=1.5)]=1
-#correction_matrix[np.logical_and(1.5<correction_matrix,correction_matrix<=2.5)]=2
-#correction_matrix[np.logical_and(2.5<correction_matrix,correction_matrix<=3.5)]=3
-#correction_matrix[np.logical_and(3.5<correction_matrix,correction_matrix<=4.5)]=4
-
-
-#Perform cubic median filter
-#for i in range(5):
-#     correction_matrix=scipy.ndimage.median_filter(correction_matrix, size=3)
-
-
-np.save('correction_matrix.npy',correction_matrix)
-
-#Show reconstruction
-#Tomograpic_viewer(correction_matrix,False,4)
-
+    """
 
 
+    def __init__(             self,
+                       shape_front,
+                        shape_side,
+                   shift_image_top,
+                   shift_image_120,
+                   shift_image_240,
+                 shift_image_front,
+                 mask_border_front,
+                 mask_border_top,
+                 mask_border_120,
+                 mask_border_240 ):
 
 
+        self.shape_front = shape_front
+        self.shape_side = shape_side
 
+        self.shift_image_top = shift_image_top
+        self.shift_image_120 = shift_image_120
+        self.shift_image_240 = shift_image_240
+        self.shift_image_front = shift_image_front
 
+        self.mask_border_front = mask_border_front
+        self.mask_border_top   = mask_border_top
+        self.mask_border_120   = mask_border_120
+        self.mask_border_240   = mask_border_240
 
-
-
-
-
-shape_front=(210,180) #you can not reconstruct somethin bigger than 190
-shape_top=(202,180)
-
-rec_part_front=np.stack([np.ones(shape_front)]*shape_top[0],axis=0)
-rec_part_top=np.stack([np.ones(shape_top)]*shape_front[0],axis=1)
-rec_part_120=np.stack([np.ones(shape_top)]*shape_front[0],axis=1)
-rec_part_240=np.stack([np.ones(shape_top)]*shape_front[0],axis=1)
-
-rec_part_120=scipy.ndimage.rotate(rec_part_120,120,axes=(1, 2),reshape=False,prefilter=True)
-rec_part_240=scipy.ndimage.rotate(rec_part_240,240,axes=(1, 2),reshape=False,prefilter=True)
-
-correction_matrix=rec_part_front+rec_part_top+rec_part_120+rec_part_240
-
-#Perform cubic median filter
-#correction_matrix=np.divide(1,np.round(correction_matrix,decimals=0),out=np.zeros_like(np.round(correction_matrix,decimals=0)),where=correction_matrix!=0)
-
-#correction_matrix[np.logical_and(0<correction_matrix,correction_matrix<=0.5)]=0
-#correction_matrix[np.logical_and(0.5<correction_matrix,correction_matrix<=1.5)]=1
-#correction_matrix[np.logical_and(1.5<correction_matrix,correction_matrix<=2.5)]=2
-#correction_matrix[np.logical_and(2.5<correction_matrix,correction_matrix<=3.5)]=3
-#correction_matrix[np.logical_and(3.5<correction_matrix,correction_matrix<=4.5)]=4
-
-
-#Perform cubic median filter
-#for i in range(5):
-#     correction_matrix=scipy.ndimage.median_filter(correction_matrix, size=3)
-
-
-np.save('correction_matrix_XRay.npy',correction_matrix)
-
-#Show reconstruction
-#Tomograpic_viewer(correction_matrix,False,4)
+        self.correction_matrix = self.calc_corr_matrix()
 
 
 
 
+############################ Calculate correction matrix ###############################
+                                                                                       #
+    def calc_corr_matrix(self):
+                                                                                       #
+        side_picture_array = np.ones(self.shape_side)
+                                                                                       #
+        picture_array_top = np.copy(side_picture_array)
+        picture_array_120 = np.copy(side_picture_array)
+        picture_array_240 = np.copy(side_picture_array)
+                                                                                       #
+        picture_array_front = np.ones(self.shape_front)
+                                                                                       #
+        if self.shift_image_top[1]>0:
+            picture_array_top[:self.shift_image_top[1],:]=0
+        elif self.shift_image_top[1]<0:
+            picture_array_top[self.shift_image_top[1]:,:]=0
+                                                                                       #
+        if self.shift_image_top[0]>0:
+            picture_array_top[:,-self.shift_image_top[0]:]=0
+        elif self.shift_image_top[0]<0:
+            picture_array_top[:,:-self.shift_image_top[0]]=0
+                                                                                       #
+        if self.shift_image_120[1]>0:
+            picture_array_120[:self.shift_image_120[1],:]=0
+        elif self.shift_image_120[1]<0:
+            picture_array_120[self.shift_image_120[1]:,:]=0
+                                                                                       #
+        if self.shift_image_120[0]>0:
+            picture_array_120[:,-self.shift_image_120[0]:]=0
+        elif self.shift_image_120[0]<0:
+            picture_array_120[:,:-self.shift_image_120[0]]=0
+                                                                                       #
+        if self.shift_image_240[1]>0:
+            picture_array_240[:self.shift_image_240[1],:]=0
+        elif self.shift_image_240[1]<0:
+            picture_array_240[self.shift_image_240[1]:,:]=0
+                                                                                       #
+        if self.shift_image_240[0]>0:
+            picture_array_240[:,-self.shift_image_240[0]:]=0
+        elif self.shift_image_240[0]<0:
+            picture_array_240[:,:-self.shift_image_240[0]]=0
+                                                                                       #
+        if self.shift_image_front[1]>0:
+
+            picture_array_front[-self.shift_image_front[1]:,:]=0
+        elif self.shift_image_front[1]<0:
+            picture_array_front[:-self.shift_image_front[1],:]=0
+
+                                                                                       #
+        if self.shift_image_front[0]>0:
+            picture_array_front[:,-self.shift_image_front[0]:]=0
+        elif self.shift_image_front[0]<0:
+            picture_array_front[:,:-self.shift_image_front[0]]=0
 
 
 
 
+        if self.mask_border_front!=None:
+                    #set side values to zero
+                    if self.mask_border_front[0]>0:
+                        picture_array_front[:,:self.mask_border_front[0]]=0
+
+
+                    if self.mask_border_front[1]>0:
+                        picture_array_front[:,-self.mask_border_front[1]:]=0
+
+                    #set top values to zero
+                    if self.mask_border_front[2]>0:
+                        picture_array_front[:self.mask_border_front[2],:]=0
+
+
+                    if self.mask_border_front[3]>0:
+                        picture_array_front[-self.mask_border_front[3]:,:]=0
+
+
+
+        if self.mask_border_top !=None:
+                        #set side values to zero
+                        if self.mask_border_top [0]>0:
+                            picture_array_top[:,:self.mask_border_top[0]]=0
+
+                        if self.mask_border_top [1]>0:
+                            picture_array_top[:,-self.mask_border_top[1]:]=0
+
+
+                        #set top values to zero
+                        if self.mask_border_top [2]>0:
+                            picture_array_top[:self.mask_border_top[2],:]=0
+
+
+                        if self.mask_border_top [3]>0:
+                            picture_array_top[-self.mask_border_top[3]:,:]=0
+
+
+
+        if self.mask_border_120!=None:
+                    #set side values to zero
+                    if self.mask_border_120[0]>0:
+                        picture_array_120[:,:self.mask_border_120[0]]=0
+
+
+                    if self.mask_border_120[1]>0:
+                        picture_array_120[:,-self.mask_border_120[1]:]=0
+
+
+                    #set top values to zero
+                    if self.mask_border_120[2]>0:
+                        picture_array_120[:self.mask_border_120[2],:]=0
+
+                    if self.mask_border_120[3]>0:
+                        picture_array_120[-self.mask_border_120[3]:,:]=0
 
 
 
 
+        if self.mask_border_240!=None:
+                    #set side values to zero
+                    if self.mask_border_240[0]>0:
+                        picture_array_240[:,:self.mask_border_240[0]]=0
+
+
+                    if self.mask_border_240[1]>0:
+                        picture_array_240[:,-self.mask_border_240[1]:]=0
+
+                    #set top values to zero
+                    if self.mask_border_240[2]>0:
+                        picture_array_240[:self.mask_border_240[2],:]=0
+
+
+                    if self.mask_border_240[3]>0:
+                        picture_array_240[-self.mask_border_240[3]:,:]=0
 
 
 
-
-
-
-shape_front=(170,130) #you can not reconstruct somethin bigger than 161
-shape_top=(140,130)
-
-rec_part_front=np.stack([np.ones(shape_front)]*shape_top[0],axis=0)
-rec_part_top=np.stack([np.ones(shape_top)]*shape_front[0],axis=1)
-rec_part_120=np.stack([np.ones(shape_top)]*shape_front[0],axis=1)
-rec_part_240=np.stack([np.ones(shape_top)]*shape_front[0],axis=1)
-
-rec_part_120=scipy.ndimage.rotate(rec_part_120,120,axes=(1, 2),reshape=False,prefilter=True)
-rec_part_240=scipy.ndimage.rotate(rec_part_240,240,axes=(1, 2),reshape=False,prefilter=True)
-
-correction_matrix=rec_part_front+rec_part_top+rec_part_120+rec_part_240
-
-#Perform cubic median filter
-#correction_matrix=np.divide(1,np.round(correction_matrix,decimals=0),out=np.zeros_like(np.round(correction_matrix,decimals=0)),where=correction_matrix!=0)
-
-#correction_matrix[np.logical_and(0<correction_matrix,correction_matrix<=0.5)]=0
-#correction_matrix[np.logical_and(0.5<correction_matrix,correction_matrix<=1.5)]=1
-#correction_matrix[np.logical_and(1.5<correction_matrix,correction_matrix<=2.5)]=2
-#correction_matrix[np.logical_and(2.5<correction_matrix,correction_matrix<=3.5)]=3
-#correction_matrix[np.logical_and(3.5<correction_matrix,correction_matrix<=4.5)]=4
-
-
-#Perform cubic median filter
-#for i in range(5):
-#     correction_matrix=scipy.ndimage.median_filter(correction_matrix, size=3)
-
-
-np.save('correction_matrix_Oncoray.npy',correction_matrix)
-
-#Show reconstruction
-Tomograpic_viewer(correction_matrix,False,4)
+                                                                                       #
+        correction_matrix_front = np.stack([picture_array_front]*self.shape_side[0],
+                                                                             axis=0 )
+                                                                                       #
+        correction_matrix_top = np.stack([picture_array_top]*self.shape_front[0],
+                                                                          axis=1 )
+                                                                                       #
+        correction_matrix_120 = np.stack([picture_array_120]*self.shape_front[0],
+                                                                          axis=1 )
+                                                                                       #
+        correction_matrix_240 = np.stack([picture_array_240]*self.shape_front[0],
+                                                                          axis=1 )
+                                                                                       #
+        correction_matrix_120 = scipy.ndimage.rotate(correction_matrix_120,
+                                                           120,axes=(1, 2),
+                                                             reshape=False,
+                                                            prefilter=True )
+                                                                                       #
+        correction_matrix_240 = scipy.ndimage.rotate(correction_matrix_240,
+                                                           240,axes=(1, 2),
+                                                             reshape=False,
+                                                            prefilter=True )
+                                                                                       #
+        correction_matrix = correction_matrix_top + correction_matrix_120 +\
+                            correction_matrix_240 + correction_matrix_front
+                                                                                       #
+        return correction_matrix
+                                                                                       #
+########################################################################################

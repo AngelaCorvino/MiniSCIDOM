@@ -1,3 +1,5 @@
+"""This module is a libray of the coordinates used for reconstruction"""
+
 #Mouse setting 2020-09-22
 x_0=int(-10)
 y_0=int(4)
@@ -73,7 +75,6 @@ cam_pic_240=Image_loader(path_pic_240,color_channel,None,1,0.2,[y1_240,y2_240,x1
 
 
 #high dose 2020-09-22 deltaz=161
-
 
 
 x_0=int(-10)

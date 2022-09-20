@@ -2,10 +2,53 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
 from matplotlib.colors import LogNorm
 
-#Class for showing reconstruted 3D data slices
+
 
 
 class Camera_picture_viewer(object):
+    """Class for showing reconstruted 3D data slices.
+
+    Parameters
+    ----------
+    cam_pic_front : array-like
+        2D array front projection.
+    cam_pic_top :   array-like
+        2D array top projection.
+    cam_pic_120 : array-like
+        2D array 120 projection.
+    cam_pic_240 : type
+        2D array 240 projection.
+    c_log : boolean
+        if True the color scale is logaritmic.
+    bits : integer-like
+        Number of bits that define the color range.
+
+    Attributes
+    ----------
+    im_1 : type
+        AxesImage for cam_pic_top.
+    im_2 : type
+        Description of attribute `im_2`.
+    im_3 : type
+        Description of attribute `im_3`.
+    im_4 : type
+        Description of attribute `im_4`.
+    axmin : type
+        Description of attribute `axmin`.
+    axmax : type
+        Description of attribute `axmax`.
+    smin : type
+        Description of attribute `smin`.
+    smax : integer-like
+        Description of attribute `smax`.
+    onclick : object
+        Function for handling click events.
+    sminval : integer-like
+        Description of attribute `sminval`.
+    c_log
+    bits
+
+    """
 
     #Initialization of class
     def __init__(self,cam_pic_front,cam_pic_top,cam_pic_120,cam_pic_240,c_log,bits):
@@ -84,8 +127,21 @@ class Camera_picture_viewer(object):
 
 
 
-    #Function for handling click events
+
     def onclick(self,event):
+        """Function for handling click events.
+
+        Parameters
+        ----------
+        event : type
+            Description of parameter `event`.
+
+        Returns
+        -------
+        type
+            Description of returned object.
+
+        """
 
         #Check if zoom etc is selected
         mode = plt.get_current_fig_manager().toolbar.mode
@@ -99,6 +155,14 @@ class Camera_picture_viewer(object):
 
 
     def update(self):
+        """Short summary.
+
+        Returns
+        -------
+        object
+            Return the updated 2D arrays.
+
+        """
 
         #Update front camera picture
         self.im_1.set_clim([self.smin.val,self.smax.val])
